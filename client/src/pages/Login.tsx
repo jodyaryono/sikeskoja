@@ -1,9 +1,16 @@
 import React, { useState } from "react";
-import { Phone, User, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import {
+  Phone,
+  User,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Shield,
+  Heart,
+} from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:5000/api";
+import API_BASE_URL from "../config/api";
 
 const Login: React.FC = () => {
   const [step, setStep] = useState<"phone" | "otp">("phone");
@@ -124,25 +131,53 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center">
-            <div className="flex items-center">
-              <div className="bg-primary-600 p-3 rounded-full">
-                <User className="h-8 w-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background Decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-300 opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400 opacity-5 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="max-w-md w-full space-y-8 relative z-10">
+        {/* Header with Logo */}
+        <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-2xl blur-lg opacity-75 animate-pulse"></div>
+              <div className="relative bg-white p-4 rounded-2xl shadow-2xl">
+                <img
+                  src="/images/logo-jayapura.png"
+                  alt="Logo Kota Jayapura"
+                  className="h-16 w-16 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.parentElement!.innerHTML =
+                      '<div class="h-16 w-16 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center"><svg class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>';
+                  }}
+                />
               </div>
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="text-4xl font-extrabold text-white drop-shadow-lg">
             SiKesKoja
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sistem Pendataan Kesehatan
+          <p className="mt-2 text-blue-100 text-sm font-medium">
+            Sistem Kesehatan Kota Jayapura
           </p>
+          <div className="mt-4 flex items-center justify-center space-x-4 text-xs text-blue-200">
+            <div className="flex items-center">
+              <Shield className="h-4 w-4 mr-1" />
+              <span>Aman & Terpercaya</span>
+            </div>
+            <div className="flex items-center">
+              <Heart className="h-4 w-4 mr-1" />
+              <span>Untuk Kesehatan</span>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-xl rounded-lg">
+        <div className="bg-white/95 backdrop-blur-sm py-8 px-6 shadow-2xl rounded-2xl border border-white/20">
           {/* Error Message */}
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4">
@@ -202,7 +237,7 @@ const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading || !phone}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {isLoading ? (
                     <div className="flex items-center">
@@ -269,7 +304,7 @@ const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading || otpCode.length !== 6}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {isLoading ? (
                     <div className="flex items-center">
