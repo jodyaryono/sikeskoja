@@ -1,0 +1,1901 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import { ArrowLeft, Save, FileText, Plus, Trash2, Edit, Eye } from "lucide-react";
+import { useAuthStore } from "../store/authStore";
+
+interface AnggotaKeluarga {
+  id: string;
+  nama: string;
+  nik?: string; // NIK - Nomor Induk Kependudukan
+  hubunganKeluarga: string;
+  tanggalLahir: string;
+  umur: number;
+  jenisKelamin: string;
+  statusPerkawinan: string;
+  sedangHamil?: string;
+  agama: string;
+  pendidikan?: string;
+  pekerjaan?: string;
+  // Gangguan Kesehatan
+  kartuJKN?: string;
+  merokok?: string;
+  buangAirBesarJamban?: string;
+  airBersih?: string;
+  diagnosisTB?: string;
+  obatTBC6Bulan?: string;
+  batukDarah2Minggu?: string;
+  diagnosisHipertensi?: string;
+  obatHipertensiTeratur?: string;
+  pengukuranTekananDarah?: string;
+  sistolik?: number;
+  diastolik?: number;
+  kontrasepsiKB?: string;
+  melahirkanDiFaskes?: string;
+  asiEksklusif?: string;
+  imunisasiLengkap?: string;
+  pemantauanPertumbuhanBalita?: string;
+}
+
+const AddQuestionnaireKS: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { token } = useAuthStore();
+  const isEditMode = !!id;
+  const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(isEditMode);
+
+  // Main Tab (I, II, III, IV)
+  const [mainTab, setMainTab] = useState(1);
+
+  // Sub Tab for Tab IV (A, B)
+  const [subTab, setSubTab] = useState("A");
+
+  // I. PENGENALAN TEMPAT
+  const [formData, setFormData] = useState({
+    provinsi: "",
+    kabupatenKota: "",
+    kecamatan: "",
+    namaPuskesmas: "",
+    kodePuskesmas: "",
+    desaKelurahan: "",
+    rw: "",
+    rt: "",
+    noUrutBangunan: "",
+    noUrutKeluarga: "",
+    alamatRumah: "",
+
+    // II. KETERANGAN KELUARGA
+    namaKepalaKeluarga: "",
+    saranaAirBersih: "YA",
+    jenisAirMinum: "PDAM",
+    jambanKeluarga: "YA",
+    jenisJamban: "KLOSET_LEHER_ANGSA",
+    gangguanJiwaBerat: "TIDAK",
+    obatGangguanJiwa: "TIDAK",
+    anggotaDipasungi: "TIDAK",
+
+    // III. KETERANGAN PENGUMPUL DATA
+    namaPengumpulData: "",
+    namaSupervisor: "",
+    tanggalPengumpulan: new Date().toISOString().split("T")[0],
+  });
+
+  const [anggotaKeluarga, setAnggotaKeluarga] = useState<AnggotaKeluarga[]>([]);
+  const [selectedAnggotaIndex, setSelectedAnggotaIndex] = useState<
+    number | null
+  >(null);
+  const [showAddAnggota, setShowAddAnggota] = useState(false);
+  const [showEditAnggota, setShowEditAnggota] = useState(false);
+  const [showViewAnggota, setShowViewAnggota] = useState(false);
+  const [editingAnggotaIndex, setEditingAnggotaIndex] = useState<number | null>(null);
+  const [newAnggota, setNewAnggota] = useState<Partial<AnggotaKeluarga>>({
+    nama: "",
+    hubunganKeluarga: "KEPALA_KELUARGA",
+    tanggalLahir: "",
+    umur: 0,
+    jenisKelamin: "PRIA",
+    statusPerkawinan: "KAWIN",
+    agama: "ISLAM",
+  });
+
+  // Fetch data for edit mode
+  const fetchQuestionnaireData = useCallback(async () => {
+    try {
+      setFetchingData(true);
+      const response = await axios.get(
+        `http://localhost:5000/api/questionnaires-ks/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        const data = response.data.data;
+
+        // Set form data
+        setFormData({
+          provinsi: data.provinsi || "",
+          kabupatenKota: data.kabupatenKota || "",
+          kecamatan: data.kecamatan || "",
+          namaPuskesmas: data.namaPuskesmas || "",
+          kodePuskesmas: data.kodePuskesmas || "",
+          desaKelurahan: data.desaKelurahan || "",
+          rw: data.rw || "",
+          rt: data.rt || "",
+          noUrutBangunan: data.noUrutBangunan || "",
+          noUrutKeluarga: data.noUrutKeluarga || "",
+          alamatRumah: data.alamatRumah || "",
+          namaKepalaKeluarga: data.namaKepalaKeluarga || "",
+          saranaAirBersih: data.saranaAirBersih || "YA",
+          jenisAirMinum: data.jenisAirMinum || "PDAM",
+          jambanKeluarga: data.jambanKeluarga || "YA",
+          jenisJamban: data.jenisJamban || "KLOSET_LEHER_ANGSA",
+          gangguanJiwaBerat: data.gangguanJiwaBerat || "TIDAK",
+          obatGangguanJiwa: data.obatGangguanJiwa || "TIDAK",
+          anggotaDipasungi: data.anggotaDipasungi || "TIDAK",
+          namaPengumpulData: data.namaPengumpulData || "",
+          namaSupervisor: data.namaSupervisor || "",
+          tanggalPengumpulan: data.tanggalPengumpulan
+            ? new Date(data.tanggalPengumpulan).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+        });
+
+        // Set anggota keluarga with health data
+        if (data.anggotaKeluarga && data.anggotaKeluarga.length > 0) {
+          const mappedAnggota = data.anggotaKeluarga.map((a: any) => ({
+            id: a.id,
+            nama: a.nama,
+            nik: a.nik || "",
+            hubunganKeluarga: a.hubunganKeluarga,
+            tanggalLahir: a.tanggalLahir
+              ? new Date(a.tanggalLahir).toISOString().split("T")[0]
+              : "",
+            umur: a.umur,
+            jenisKelamin: a.jenisKelamin,
+            statusPerkawinan: a.statusPerkawinan,
+            sedangHamil: a.sedangHamil,
+            agama: a.agama,
+            pendidikan: a.pendidikan,
+            pekerjaan: a.pekerjaan,
+            // Health data
+            kartuJKN: a.gangguanKesehatan?.kartuJKN || "TIDAK",
+            merokok: a.gangguanKesehatan?.merokok || "TIDAK",
+            buangAirBesarJamban:
+              a.gangguanKesehatan?.buangAirBesarJamban || "TIDAK",
+            airBersih: a.gangguanKesehatan?.airBersih || "TIDAK",
+            diagnosisTB: a.gangguanKesehatan?.diagnosisTB || "TIDAK",
+            obatTBC6Bulan: a.gangguanKesehatan?.obatTBC6Bulan || "TIDAK",
+            batukDarah2Minggu:
+              a.gangguanKesehatan?.batukDarah2Minggu || "TIDAK",
+            diagnosisHipertensi:
+              a.gangguanKesehatan?.diagnosisHipertensi || "TIDAK",
+            obatHipertensiTeratur:
+              a.gangguanKesehatan?.obatHipertensiTeratur || "TIDAK",
+            pengukuranTekananDarah:
+              a.gangguanKesehatan?.pengukuranTekananDarah || "TIDAK",
+            sistolik: a.gangguanKesehatan?.sistolik || undefined,
+            diastolik: a.gangguanKesehatan?.diastolik || undefined,
+            kontrasepsiKB: a.gangguanKesehatan?.kontrasepsiKB || "TIDAK",
+            melahirkanDiFaskes:
+              a.gangguanKesehatan?.melahirkanDiFaskes || "TIDAK",
+            asiEksklusif: a.gangguanKesehatan?.asiEksklusif || "TIDAK",
+            imunisasiLengkap: a.gangguanKesehatan?.imunisasiLengkap || "TIDAK",
+            pemantauanPertumbuhanBalita:
+              a.gangguanKesehatan?.pemantauanPertumbuhanBalita || "TIDAK",
+          }));
+          setAnggotaKeluarga(mappedAnggota);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching questionnaire:", error);
+      alert("Gagal memuat data kuesioner");
+      navigate("/questionnaires");
+    } finally {
+      setFetchingData(false);
+    }
+  }, [id, navigate, token]);
+
+  useEffect(() => {
+    if (isEditMode && id) {
+      fetchQuestionnaireData();
+    }
+  }, [isEditMode, id, fetchQuestionnaireData]);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleNewAnggotaChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+
+    if (name === "tanggalLahir") {
+      const birthDate = new Date(value);
+      const today = new Date();
+      const age = Math.floor(
+        (today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+      );
+
+      setNewAnggota({
+        ...newAnggota,
+        [name]: value,
+        umur: age,
+      });
+    } else {
+      setNewAnggota({
+        ...newAnggota,
+        [name]: value,
+      });
+    }
+  };
+
+  const addAnggotaKeluarga = () => {
+    if (!newAnggota.nama || !newAnggota.tanggalLahir) {
+      alert("Nama dan tanggal lahir wajib diisi");
+      return;
+    }
+
+    const anggota: AnggotaKeluarga = {
+      id: `temp-${Date.now()}`,
+      nama: newAnggota.nama!,
+      nik: newAnggota.nik,
+      hubunganKeluarga: newAnggota.hubunganKeluarga!,
+      tanggalLahir: newAnggota.tanggalLahir!,
+      umur: newAnggota.umur!,
+      jenisKelamin: newAnggota.jenisKelamin!,
+      statusPerkawinan: newAnggota.statusPerkawinan!,
+      sedangHamil: newAnggota.sedangHamil,
+      agama: newAnggota.agama!,
+      pendidikan: newAnggota.pendidikan,
+      pekerjaan: newAnggota.pekerjaan,
+      // Init gangguan kesehatan dengan default TIDAK
+      kartuJKN: "TIDAK",
+      merokok: "TIDAK",
+    };
+
+    setAnggotaKeluarga([...anggotaKeluarga, anggota]);
+    setShowAddAnggota(false);
+
+    // Reset form
+    setNewAnggota({
+      nama: "",
+      hubunganKeluarga: "ANAK",
+      tanggalLahir: "",
+      umur: 0,
+      jenisKelamin: "PRIA",
+      statusPerkawinan: "BELUM_KAWIN",
+      agama: "ISLAM",
+    });
+  };
+
+  const openEditAnggota = (index: number) => {
+    setEditingAnggotaIndex(index);
+    const anggota = anggotaKeluarga[index];
+    setNewAnggota({
+      nama: anggota.nama,
+      nik: anggota.nik,
+      hubunganKeluarga: anggota.hubunganKeluarga,
+      tanggalLahir: anggota.tanggalLahir,
+      umur: anggota.umur,
+      jenisKelamin: anggota.jenisKelamin,
+      statusPerkawinan: anggota.statusPerkawinan,
+      sedangHamil: anggota.sedangHamil,
+      agama: anggota.agama,
+      pendidikan: anggota.pendidikan,
+      pekerjaan: anggota.pekerjaan,
+    });
+    setShowEditAnggota(true);
+  };
+
+  const updateAnggotaKeluarga = () => {
+    if (!newAnggota.nama || !newAnggota.tanggalLahir || editingAnggotaIndex === null) {
+      alert("Nama dan tanggal lahir wajib diisi");
+      return;
+    }
+
+    const updated = [...anggotaKeluarga];
+    updated[editingAnggotaIndex] = {
+      ...updated[editingAnggotaIndex],
+      nama: newAnggota.nama!,
+      nik: newAnggota.nik,
+      hubunganKeluarga: newAnggota.hubunganKeluarga!,
+      tanggalLahir: newAnggota.tanggalLahir!,
+      umur: newAnggota.umur!,
+      jenisKelamin: newAnggota.jenisKelamin!,
+      statusPerkawinan: newAnggota.statusPerkawinan!,
+      sedangHamil: newAnggota.sedangHamil,
+      agama: newAnggota.agama!,
+      pendidikan: newAnggota.pendidikan,
+      pekerjaan: newAnggota.pekerjaan,
+    };
+
+    setAnggotaKeluarga(updated);
+    setShowEditAnggota(false);
+    setEditingAnggotaIndex(null);
+
+    // Reset form
+    setNewAnggota({
+      nama: "",
+      hubunganKeluarga: "ANAK",
+      tanggalLahir: "",
+      umur: 0,
+      jenisKelamin: "PRIA",
+      statusPerkawinan: "BELUM_KAWIN",
+      agama: "ISLAM",
+    });
+  };
+
+  const openViewAnggota = (index: number) => {
+    setSelectedAnggotaIndex(index);
+    setShowViewAnggota(true);
+  };
+
+  const removeAnggotaKeluarga = (id: string) => {
+    setAnggotaKeluarga(anggotaKeluarga.filter((a) => a.id !== id));
+    setSelectedAnggotaIndex(null);
+  };
+
+  const handleAnggotaGangguanChange = (field: string, value: any) => {
+    if (selectedAnggotaIndex === null) return;
+
+    const updated = [...anggotaKeluarga];
+    updated[selectedAnggotaIndex] = {
+      ...updated[selectedAnggotaIndex],
+      [field]: value,
+    };
+    setAnggotaKeluarga(updated);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (anggotaKeluarga.length === 0) {
+      alert("Minimal harus ada 1 anggota keluarga!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const jumlahAnggotaDewasa = anggotaKeluarga.filter(
+        (a) => a.umur >= 15
+      ).length;
+      const jumlahAnggotaUsia0_15 = anggotaKeluarga.filter(
+        (a) => a.umur <= 15
+      ).length;
+      const jumlahAnggotaUsia12_59 = anggotaKeluarga.filter(
+        (a) => a.umur >= 12 && a.umur <= 59
+      ).length;
+      const jumlahAnggotaUsia10_54 = anggotaKeluarga.filter(
+        (a) => a.umur >= 10 && a.umur <= 54
+      ).length;
+      const jumlahAnggotaUsia0_11 = anggotaKeluarga.filter(
+        (a) => a.umur <= 11
+      ).length;
+
+      const payload = {
+        ...formData,
+        jumlahAnggotaKeluarga: anggotaKeluarga.length,
+        jumlahAnggotaDewasa,
+        jumlahAnggotaUsia0_15,
+        jumlahAnggotaUsia12_59,
+        jumlahAnggotaUsia10_54,
+        jumlahAnggotaUsia0_11,
+        anggotaKeluarga: anggotaKeluarga.map(({ id, ...rest }) => rest),
+        status: "DRAFT",
+      };
+
+      let response;
+      if (isEditMode) {
+        // Update existing questionnaire
+        response = await axios.put(
+          `http://localhost:5000/api/questionnaires-ks/${id}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } else {
+        // Create new questionnaire
+        response = await axios.post(
+          "http://localhost:5000/api/questionnaires-ks",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      if (response.data.success) {
+        alert(
+          isEditMode
+            ? "Kuesioner Keluarga Sehat berhasil diupdate!"
+            : "Kuesioner Keluarga Sehat berhasil dibuat!"
+        );
+        navigate("/questionnaires");
+      }
+    } catch (error: any) {
+      console.error("Error creating questionnaire:", error);
+      alert(
+        error.response?.data?.message ||
+          "Gagal membuat kuesioner. Silakan coba lagi."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderTabI = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Provinsi <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="provinsi"
+            value={formData.provinsi}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Contoh: Jawa Barat"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kabupaten/Kota <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="kabupatenKota"
+            value={formData.kabupatenKota}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Contoh: Bandung"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kecamatan <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="kecamatan"
+            value={formData.kecamatan}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nama Puskesmas <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="namaPuskesmas"
+            value={formData.namaPuskesmas}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kode Puskesmas
+          </label>
+          <input
+            type="text"
+            name="kodePuskesmas"
+            value={formData.kodePuskesmas}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Desa/Kelurahan <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="desaKelurahan"
+            value={formData.desaKelurahan}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              RW <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="rw"
+              value={formData.rw}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              RT <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="rt"
+              value={formData.rt}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              No. Urut Bangunan <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="noUrutBangunan"
+              value={formData.noUrutBangunan}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              No. Urut Keluarga <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="noUrutKeluarga"
+              value={formData.noUrutKeluarga}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Alamat Rumah <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="alamatRumah"
+            value={formData.alamatRumah}
+            onChange={handleChange}
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTabII = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nama Kepala Keluarga <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="namaKepalaKeluarga"
+            value={formData.namaKepalaKeluarga}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Sarana air bersih
+          </label>
+          <select
+            name="saranaAirBersih"
+            value={formData.saranaAirBersih}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="YA">Ya</option>
+            <option value="TIDAK">Tidak</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Jenis air minum
+          </label>
+          <select
+            name="jenisAirMinum"
+            value={formData.jenisAirMinum}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="PDAM">PDAM</option>
+            <option value="SUMUR_POMPA">Sumur Pompa</option>
+            <option value="SUMUR_GALI">Sumur Gali</option>
+            <option value="MATA_AIR">Mata Air</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Jamban keluarga
+          </label>
+          <select
+            name="jambanKeluarga"
+            value={formData.jambanKeluarga}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="YA">Ya</option>
+            <option value="TIDAK">Tidak</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Jenis jamban
+          </label>
+          <select
+            name="jenisJamban"
+            value={formData.jenisJamban}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="KLOSET_LEHER_ANGSA">Kloset/Leher Angsa</option>
+            <option value="PLENGSENGAN">Plengsengan</option>
+            <option value="CEMPLUNG">Cemplung</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Gangguan jiwa berat (Schizophrenia)
+          </label>
+          <select
+            name="gangguanJiwaBerat"
+            value={formData.gangguanJiwaBerat}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="YA">Ya</option>
+            <option value="TIDAK">Tidak</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Obat gangguan jiwa teratur
+          </label>
+          <select
+            name="obatGangguanJiwa"
+            value={formData.obatGangguanJiwa}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="YA">Ya</option>
+            <option value="TIDAK">Tidak</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Anggota dipasungi
+          </label>
+          <select
+            name="anggotaDipasungi"
+            value={formData.anggotaDipasungi}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="YA">Ya</option>
+            <option value="TIDAK">Tidak</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTabIII = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nama Pengumpul Data <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="namaPengumpulData"
+            value={formData.namaPengumpulData}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        <div className="space-y-3">
+          {anggotaKeluarga.map((anggota, index) => (
+            <div
+              key={anggota.id}
+              className={`p-4 border rounded-lg transition-all ${
+                selectedAnggotaIndex === index
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full font-bold text-sm">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-gray-900">
+                        {anggota.nama}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {anggota.hubunganKeluarga.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    {anggota.nik && (
+                      <div className="col-span-2">
+                        <span className="text-gray-500">NIK:</span>{" "}
+                        <span className="font-mono font-medium text-blue-600">
+                          {anggota.nik}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-500">Tanggal Lahir:</span>{" "}
+                      <span className="font-medium">
+                        {new Date(anggota.tanggalLahir).toLocaleDateString(
+                          "id-ID"
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Umur:</span>{" "}
+                      <span className="font-medium">{anggota.umur} tahun</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">L/P:</span>{" "}
+                      <span className="font-medium">
+                        {anggota.jenisKelamin}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Agama:</span>{" "}
+                      <span className="font-medium">{anggota.agama}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openViewAnggota(index);
+                    }}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Lihat Detail"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditAnggota(index);
+                    }}
+                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeAnggotaKeluarga(anggota.id);
+                    }}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Hapus"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>onClick={() => setSelectedAnggotaIndex(index)}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full font-bold text-sm">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-gray-900">
+                        {anggota.nama}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {anggota.hubunganKeluarga.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    {anggota.nik && (
+                      <div className="col-span-2">
+                        <span className="text-gray-500">NIK:</span>{" "}
+                        <span className="font-mono font-medium text-blue-600">
+                          {anggota.nik}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-500">Tanggal Lahir:</span>{" "}
+                      <span className="font-medium">
+                        {new Date(anggota.tanggalLahir).toLocaleDateString(
+                          "id-ID"
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Umur:</span>{" "}
+                      <span className="font-medium">{anggota.umur} tahun</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">L/P:</span>{" "}
+                      <span className="font-medium">
+                        {anggota.jenisKelamin}
+      {/* Modal Add Anggota */}
+      {showAddAnggota && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-bold">Tambah Anggota Keluarga</h3>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Nama <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nama"
+                    value={newAnggota.nama}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    placeholder="Contoh: Markus Wanggai"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    NIK (Nomor Induk Kependudukan){" "}
+                    <span className="text-xs text-gray-500 font-normal">
+                      - 16 digit
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nik"
+                    value={newAnggota.nik || ""}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    placeholder="Contoh: 9171051005850001"
+                    maxLength={16}
+                    pattern="[0-9]{16}"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: 91 (Papua) 71 (Kota Jayapura) 01-05 (Kecamatan)
+                    DDMMYY (Tanggal Lahir, +40 untuk perempuan) XXXX (Nomor
+                    Urut)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Hubungan Keluarga
+                  </label>
+                  <select
+                    name="hubunganKeluarga"
+                    value={newAnggota.hubunganKeluarga}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="KEPALA_KELUARGA">Kepala Keluarga</option>
+                    <option value="ISTRI_SUAMI">Istri/Suami</option>
+                    <option value="ANAK">Anak</option>
+                    <option value="ORANG_TUA">Orang Tua</option>
+                    <option value="FAMILI_LAIN">Famili Lain</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Tanggal Lahir <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggalLahir"
+                    value={newAnggota.tanggalLahir}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Umur{" "}
+                    <span className="text-xs text-gray-500 font-normal">
+                      (otomatis dari tanggal lahir)
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    value={newAnggota.umur || 0}
+                    className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
+                    readOnly
+                    disabled
+                    title="Umur dihitung otomatis dari tanggal lahir"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Jenis Kelamin
+                  </label>
+                  <select
+                    name="jenisKelamin"
+                    value={newAnggota.jenisKelamin}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="PRIA">Pria</option>
+                    <option value="WANITA">Wanita</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Status Perkawinan
+                  </label>
+                  <select
+                    name="statusPerkawinan"
+                    value={newAnggota.statusPerkawinan}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="KAWIN">Kawin</option>
+                    <option value="BELUM_KAWIN">Belum Kawin</option>
+                    <option value="CERAI">Cerai</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Agama
+                  </label>
+                  <select
+                    name="agama"
+                    value={newAnggota.agama}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="ISLAM">Islam</option>
+                    <option value="KRISTEN">Kristen</option>
+                    <option value="KATOLIK">Katolik</option>
+                    <option value="HINDU">Hindu</option>
+                    <option value="BUDHA">Budha</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditAnggota(false);
+                  setEditingAnggotaIndex(null);
+                }}
+                className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={updateAnggotaKeluarga}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal View Anggota */}
+      {showViewAnggota && selectedAnggotaIndex !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-bold">Detail Anggota Keluarga</h3>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {(() => {
+                const anggota = anggotaKeluarga[selectedAnggotaIndex];
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Nama Lengkap
+                        </label>
+                        <p className="text-lg font-bold text-gray-900">
+                          {anggota.nama}
+                        </p>
+                      </div>
+
+                      {anggota.nik && (
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            NIK
+                          </label>
+                          <p className="text-lg font-mono font-bold text-blue-600">
+                            {anggota.nik}
+                          </p>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Hubungan Keluarga
+                        </label>
+                        <p className="text-base font-semibold text-gray-900">
+                          {anggota.hubunganKeluarga.replace(/_/g, " ")}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Tanggal Lahir
+                        </label>
+                        <p className="text-base font-semibold text-gray-900">
+                          {new Date(anggota.tanggalLahir).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Umur
+                        </label>
+                        <p className="text-base font-semibold text-gray-900">
+                          {anggota.umur} tahun
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Jenis Kelamin
+                        </label>
+                        <p className="text-base font-semibold text-gray-900">
+                          {anggota.jenisKelamin}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Status Perkawinan
+                        </label>
+                        <p className="text-base font-semibold text-gray-900">
+                          {anggota.statusPerkawinan.replace(/_/g, " ")}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Agama
+                        </label>
+                        <p className="text-base font-semibold text-gray-900">
+                          {anggota.agama}
+                        </p>
+                      </div>
+
+                      {anggota.pendidikan && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Pendidikan
+                          </label>
+                          <p className="text-base font-semibold text-gray-900">
+                            {anggota.pendidikan}
+                          </p>
+                        </div>
+                      )}
+
+                      {anggota.pekerjaan && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Pekerjaan
+                          </label>
+                          <p className="text-base font-semibold text-gray-900">
+                            {anggota.pekerjaan}
+                          </p>
+                        </div>
+                      )}
+
+                      {anggota.sedangHamil && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Sedang Hamil
+                          </label>
+                          <p className="text-base font-semibold text-gray-900">
+                            {anggota.sedangHamil}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Health Information Preview */}
+                    {(anggota.kartuJKN || anggota.merokok) && (
+                      <div className="mt-6 pt-6 border-t">
+                        <h4 className="font-bold text-gray-900 mb-3">
+                          Informasi Kesehatan
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {anggota.kartuJKN && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">
+                                Kartu JKN:
+                              </span>
+                              <span
+                                className={`text-sm font-semibold ${
+                                  anggota.kartuJKN === "YA"
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                {anggota.kartuJKN}
+                              </span>
+                            </div>
+                          )}
+                          {anggota.merokok && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">
+                                Merokok:
+                              </span>
+                              <span
+                                className={`text-sm font-semibold ${
+                                  anggota.merokok === "YA"
+                                    ? "text-red-600"
+                                    : "text-green-600"
+                                }`}
+                              >
+                                {anggota.merokok}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          * Detail kesehatan lengkap dapat diisi di tab "B.
+                          Gangguan Kesehatan"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="p-6 border-t flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowViewAnggota(false);
+                }}
+                className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );  {/* Modal Edit Anggota */}
+      {showEditAnggota && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-bold">Edit Anggota Keluarga</h3>
+            </div></div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeAnggotaKeluarga(anggota.id);
+                  }}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal Add Anggota */}
+      {showAddAnggota && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-bold">Tambah Anggota Keluarga</h3>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Nama <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nama"
+                    value={newAnggota.nama}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    placeholder="Contoh: Markus Wanggai"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    NIK (Nomor Induk Kependudukan){" "}
+                    <span className="text-xs text-gray-500 font-normal">
+                      - 16 digit
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nik"
+                    value={newAnggota.nik || ""}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    placeholder="Contoh: 9171051005850001"
+                    maxLength={16}
+                    pattern="[0-9]{16}"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: 91 (Papua) 71 (Kota Jayapura) 01-05 (Kecamatan)
+                    DDMMYY (Tanggal Lahir, +40 untuk perempuan) XXXX (Nomor
+                    Urut)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Hubungan Keluarga
+                  </label>
+                  <select
+                    name="hubunganKeluarga"
+                    value={newAnggota.hubunganKeluarga}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="KEPALA_KELUARGA">Kepala Keluarga</option>
+                    <option value="ISTRI_SUAMI">Istri/Suami</option>
+                    <option value="ANAK">Anak</option>
+                    <option value="ORANG_TUA">Orang Tua</option>
+                    <option value="FAMILI_LAIN">Famili Lain</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Tanggal Lahir <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggalLahir"
+                    value={newAnggota.tanggalLahir}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Umur{" "}
+                    <span className="text-xs text-gray-500 font-normal">
+                      (otomatis dari tanggal lahir)
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    value={newAnggota.umur || 0}
+                    className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
+                    readOnly
+                    disabled
+                    title="Umur dihitung otomatis dari tanggal lahir"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Jenis Kelamin
+                  </label>
+                  <select
+                    name="jenisKelamin"
+                    value={newAnggota.jenisKelamin}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="PRIA">Pria</option>
+                    <option value="WANITA">Wanita</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Status Perkawinan
+                  </label>
+                  <select
+                    name="statusPerkawinan"
+                    value={newAnggota.statusPerkawinan}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="KAWIN">Kawin</option>
+                    <option value="BELUM_KAWIN">Belum Kawin</option>
+                    <option value="CERAI">Cerai</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Agama
+                  </label>
+                  <select
+                    name="agama"
+                    value={newAnggota.agama}
+                    onChange={handleNewAnggotaChange}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="ISLAM">Islam</option>
+                    <option value="KRISTEN">Kristen</option>
+                    <option value="KATOLIK">Katolik</option>
+                    <option value="HINDU">Hindu</option>
+                    <option value="BUDHA">Budha</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddAnggota(false)}
+                className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={addAnggotaKeluarga}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Tambah
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderTabIV_SubB = () => {
+    if (selectedAnggotaIndex === null) {
+      return (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <p className="text-gray-600">
+            Pilih anggota keluarga di tab "A. Identitas Keluarga" terlebih
+            dahulu
+          </p>
+        </div>
+      );
+    }
+
+    const anggota = anggotaKeluarga[selectedAnggotaIndex];
+
+    return (
+      <div className="space-y-4">
+        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+          <p className="font-semibold text-blue-900">
+            Data Gangguan Kesehatan untuk:
+          </p>
+          <p className="text-lg font-bold text-blue-900">
+            {anggota.nama} ({anggota.umur} tahun)
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Kartu JKN?</label>
+            <select
+              value={anggota.kartuJKN || "TIDAK"}
+              onChange={(e) =>
+                handleAnggotaGangguanChange("kartuJKN", e.target.value)
+              }
+              className="w-full px-4 py-2 border rounded-lg"
+            >
+              <option value="YA">Ya</option>
+              <option value="TIDAK">Tidak</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Merokok?</label>
+            <select
+              value={anggota.merokok || "TIDAK"}
+              onChange={(e) =>
+                handleAnggotaGangguanChange("merokok", e.target.value)
+              }
+              className="w-full px-4 py-2 border rounded-lg"
+            >
+              <option value="YA">Ya</option>
+              <option value="TIDAK">Tidak</option>
+            </select>
+          </div>
+
+          {anggota.umur >= 15 && (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Buang air besar di jamban? (≥15 tahun)
+                </label>
+                <select
+                  value={anggota.buangAirBesarJamban || "YA"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange(
+                      "buangAirBesarJamban",
+                      e.target.value
+                    )
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Air bersih?
+                </label>
+                <select
+                  value={anggota.airBersih || "YA"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange("airBersih", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Diagnosis TB?
+                </label>
+                <select
+                  value={anggota.diagnosisTB || "TIDAK"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange("diagnosisTB", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Obat TBC 6 bulan?
+                </label>
+                <select
+                  value={anggota.obatTBC6Bulan || "TIDAK"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange("obatTBC6Bulan", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Diagnosis Hipertensi?
+                </label>
+                <select
+                  value={anggota.diagnosisHipertensi || "TIDAK"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange(
+                      "diagnosisHipertensi",
+                      e.target.value
+                    )
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Obat hipertensi teratur?
+                </label>
+                <select
+                  value={anggota.obatHipertensiTeratur || "TIDAK"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange(
+                      "obatHipertensiTeratur",
+                      e.target.value
+                    )
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Sistolik (mmHg)
+                </label>
+                <input
+                  type="number"
+                  value={anggota.sistolik || ""}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange(
+                      "sistolik",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="120"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Diastolik (mmHg)
+                </label>
+                <input
+                  type="number"
+                  value={anggota.diastolik || ""}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange(
+                      "diastolik",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="80"
+                />
+              </div>
+            </>
+          )}
+
+          {anggota.jenisKelamin === "WANITA" &&
+            anggota.umur >= 10 &&
+            anggota.umur <= 54 && (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Kontrasepsi/KB? (Wanita 10-54 th)
+                </label>
+                <select
+                  value={anggota.kontrasepsiKB || "TIDAK"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange("kontrasepsiKB", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+            )}
+
+          {anggota.umur <= 1 && (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Melahirkan di faskes? (Ibu &lt;12 bln)
+                </label>
+                <select
+                  value={anggota.melahirkanDiFaskes || "YA"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange(
+                      "melahirkanDiFaskes",
+                      e.target.value
+                    )
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  ASI Eksklusif? (0-6 bln)
+                </label>
+                <select
+                  value={anggota.asiEksklusif || "YA"}
+                  onChange={(e) =>
+                    handleAnggotaGangguanChange("asiEksklusif", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="YA">Ya</option>
+                  <option value="TIDAK">Tidak</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {anggota.umur >= 1 && anggota.umur <= 2 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Imunisasi lengkap? (12-23 bln)
+              </label>
+              <select
+                value={anggota.imunisasiLengkap || "YA"}
+                onChange={(e) =>
+                  handleAnggotaGangguanChange(
+                    "imunisasiLengkap",
+                    e.target.value
+                  )
+                }
+                className="w-full px-4 py-2 border rounded-lg"
+              >
+                <option value="YA">Ya</option>
+                <option value="TIDAK">Tidak</option>
+              </select>
+            </div>
+          )}
+
+          {anggota.umur >= 2 && anggota.umur <= 5 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Pemantauan balita? (2-59 bln)
+              </label>
+              <select
+                value={anggota.pemantauanPertumbuhanBalita || "YA"}
+                onChange={(e) =>
+                  handleAnggotaGangguanChange(
+                    "pemantauanPertumbuhanBalita",
+                    e.target.value
+                  )
+                }
+                className="w-full px-4 py-2 border rounded-lg"
+              >
+                <option value="YA">Ya</option>
+                <option value="TIDAK">Tidak</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTabIV = () => (
+    <div className="space-y-4">
+      {/* Sub Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setSubTab("A")}
+            className={`py-3 px-6 font-medium border-b-2 transition-colors ${
+              subTab === "A"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            A. Identitas Keluarga
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubTab("B")}
+            className={`py-3 px-6 font-medium border-b-2 transition-colors ${
+              subTab === "B"
+                ? "border-green-600 text-green-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            B. Gangguan Kesehatan
+          </button>
+        </nav>
+      </div>
+
+      {/* Sub Tab Content */}
+      <div className="pt-4">
+        {subTab === "A" ? renderTabIV_SubA() : renderTabIV_SubB()}
+      </div>
+    </div>
+  );
+
+  if (fetchingData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat data kuesioner...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/questionnaires")}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+            aria-label="Kembali"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="w-7 h-7 text-blue-600" />
+              {isEditMode
+                ? "Edit Kuesioner Keluarga Sehat (KS)"
+                : "Kuesioner Keluarga Sehat (KS)"}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {isEditMode
+                ? "Ubah Data Kesehatan Keluarga"
+                : "Pendataan Kesehatan Keluarga"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Tabs */}
+      <div className="bg-white rounded-xl shadow-lg">
+        <div className="border-b border-gray-200">
+          <nav className="flex">
+            {[
+              { num: 1, label: "I. Pengenalan Tempat", color: "blue" },
+              { num: 2, label: "II. Keterangan Keluarga", color: "green" },
+              { num: 3, label: "III. Pengumpul Data", color: "purple" },
+              { num: 4, label: "IV. Keterangan Individu", color: "orange" },
+            ].map((tab) => (
+              <button
+                key={tab.num}
+                type="button"
+                onClick={() => setMainTab(tab.num)}
+                className={`flex-1 py-4 px-4 font-semibold border-b-4 transition-all ${
+                  mainTab === tab.num
+                    ? `border-${tab.color}-600 text-${tab.color}-600 bg-${tab.color}-50`
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <form onSubmit={handleSubmit} className="p-6">
+          {mainTab === 1 && renderTabI()}
+          {mainTab === 2 && renderTabII()}
+          {mainTab === 3 && renderTabIII()}
+          {mainTab === 4 && renderTabIV()}
+
+          {/* Action Buttons */}
+          <div className="flex justify-between pt-6 mt-6 border-t">
+            <button
+              type="button"
+              onClick={() => setMainTab(Math.max(1, mainTab - 1))}
+              className={`px-6 py-3 border rounded-lg hover:bg-gray-50 ${
+                mainTab === 1 ? "invisible" : ""
+              }`}
+            >
+              ← Sebelumnya
+            </button>
+
+            {mainTab < 4 ? (
+              <button
+                type="button"
+                onClick={() => setMainTab(mainTab + 1)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Selanjutnya →
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                disabled={loading || fetchingData}
+              >
+                <Save className="w-5 h-5" />
+                {loading
+                  ? isEditMode
+                    ? "Mengupdate..."
+                    : "Menyimpan..."
+                  : isEditMode
+                  ? "Update Kuesioner"
+                  : "Simpan Kuesioner"}
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddQuestionnaireKS;

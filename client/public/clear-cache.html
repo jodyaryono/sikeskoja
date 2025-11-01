@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Clear Cache - SiKesKoja</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .success {
+            color: #10b981;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Clear Cache & Reset</h1>
+        <p>
+            Untuk memastikan data tampil dengan benar, silakan klik tombol di bawah untuk
+            <strong>membersihkan cache browser</strong> dan <strong>login ulang</strong>.
+        </p>
+        <p style="font-size: 14px; color: #999;">
+            Proses ini akan menghapus session lama yang expired.
+        </p>
+        <button onclick="clearAndRedirect()">
+            Clear Cache & Login Ulang
+        </button>
+        <p class="success" id="success">
+            ✅ Cache dibersihkan! Redirect ke login...
+        </p>
+    </div>
+
+    <script>
+        function clearAndRedirect() {
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Show success message
+            document.getElementById('success').style.display = 'block';
+
+            // Redirect to login after 1 second
+            setTimeout(() => {
+                window.location.href = 'http://localhost:3000/';
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>

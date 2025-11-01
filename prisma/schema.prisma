@@ -1,0 +1,329 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String?  // Optional for OTP-only users
+  phone     String   @unique // WhatsApp number for OTP
+  role      UserRole @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile             UserProfile?
+  createdQuestionnaires Questionnaire[] @relation("CreatedBy")
+  otpSessions         OTPSession[]
+
+  @@index([phone])
+  @@map("users")
+}
+
+model UserProfile {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  fullName String
+  phone    String?
+  address  String?
+  avatar   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// OTP Session for WhatsApp authentication
+model OTPSession {
+  id          String   @id @default(cuid())
+  userId      String
+  phone       String
+  otpCode     String
+  messageId   String?  // WhatsApp message ID from API
+  isVerified  Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([userId])
+  @@index([phone])
+  @@index([otpCode])
+  @@index([expiresAt])
+  @@map("otp_sessions")
+}
+
+// Questionnaire Management - Kuesioner Keluarga Sehat (KS)
+model Questionnaire {
+  id                String              @id @default(cuid())
+  questionnaireDate DateTime            @default(now())
+  status            QuestionnaireStatus @default(DRAFT)
+  
+  // I. PENGENALAN TEMPAT (KS Keluarga)
+  provinsi          String
+  provinsiKode      String? // Kode BPS 2-digit
+  kabupatenKota     String
+  kabupatenKode     String? // Kode BPS 4-digit
+  kecamatan         String
+  kecamatanKode     String? // Kode BPS 7-digit
+  desaKelurahan     String
+  desaKode          String? // Kode BPS 10-digit
+  namaPuskesmas     String
+  kodePuskesmas     String?
+  rw                String
+  rt                String
+  noUrutBangunan    String
+  noUrutKeluarga    String
+  alamatRumah       String
+  latitude          Float? // GPS Latitude
+  longitude         Float? // GPS Longitude
+  
+  // II. KETERANGAN KELUARGA
+  namaKepalaKeluarga String
+  jumlahAnggotaKeluarga Int @default(0)
+  jumlahAnggotaDewasa Int @default(0)
+  jumlahAnggotaUsia0_15 Int @default(0)
+  jumlahAnggotaUsia12_59 Int @default(0)
+  jumlahAnggotaUsia10_54 Int @default(0)
+  jumlahAnggotaUsia0_11 Int @default(0)
+  
+  saranaAirBersih   String? // YA/TIDAK
+  jenisAirMinum     String? // PDAM/sumur/dll
+  jambanKeluarga    String? // YA/TIDAK
+  jenisJamban       String? // kloset/leher angsa/dll
+  gangguanJiwaBerat String? // YA/TIDAK
+  obatGangguanJiwa  String? // YA/TIDAK -> BLOK III
+  anggotaDipasungi  String? // YA/TIDAK
+  
+  // III. KETERANGAN PENGUMPUL DATA
+  namaPengumpulData String
+  namaSupervisor    String?
+  tanggalPengumpulan DateTime @default(now())
+  
+  // Metadata
+  createdBy         String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  submittedAt       DateTime?
+
+  // Relations
+  creator           User                @relation("CreatedBy", fields: [createdBy], references: [id])
+  anggotaKeluarga   AnggotaKeluarga[]   // 1 to many
+
+  // Indexes for performance
+  @@index([questionnaireDate])
+  @@index([createdBy])
+  @@index([status])
+  @@index([provinsi])
+  @@index([kabupatenKota])
+  @@index([kecamatan])
+  @@index([kodePuskesmas])
+  @@map("questionnaires")
+}
+
+// IV. KETERANGAN ANGGOTA KELUARGA (1 to many)
+model AnggotaKeluarga {
+  id                  String   @id @default(cuid())
+  questionnaireId     String
+  
+  // Data Anggota
+  noUrut              Int
+  nama                String
+  hubunganKeluarga    String // Kepala Keluarga, Istri/Suami, Anak, dll
+  tanggalLahir        DateTime
+  umur                Int
+  jenisKelamin        String // PRIA/WANITA
+  statusPerkawinan    String // Kawin, Belum Kawin, Cerai, dll
+  sedangHamil         String? // YA/TIDAK (khusus wanita 10-54 th)
+  agama               String
+  pendidikan          String? // untuk usia >5 tahun
+  pekerjaan           String? // untuk usia >10 tahun
+  
+  // V. KETERANGAN INDIVIDU
+  nik                 String?
+  tanggalPulid        DateTime?
+  noUrutAnggota       String?
+  usiaAnggota         String? // dalam bulan/tahun
+  
+  // Alamat dari KTP (bisa berbeda dengan kepala keluarga)
+  ikutiKepalaKeluarga Boolean @default(true) // Checkbox: ikuti alamat kepala keluarga
+  alamatRumah         String? // Alamat lengkap dari KTP (opsional jika ikuti KK)
+  provinsiKode        String? // Kode provinsi dari KTP (opsional jika ikuti KK)
+  kabupatenKode       String? // Kode kabupaten dari KTP (opsional jika ikuti KK)
+  kecamatanKode       String? // Kode kecamatan dari KTP (opsional jika ikuti KK)
+  desaKode            String? // Kode desa dari KTP (opsional jika ikuti KK)
+  
+  // GPS Location (independen untuk tracking individu)
+  latitude            Float? // GPS Latitude individu (copy dari questionnaire jika tidak ada)
+  longitude           Float? // GPS Longitude individu (copy dari questionnaire jika tidak ada)
+  
+  // Upload KTP/KK
+  ktpUrl              String? // URL file KTP yang diupload
+  kkUrl               String? // URL file KK yang diupload (hanya kepala keluarga)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relations
+  questionnaire       Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  gangguanKesehatan   GangguanKesehatan? // 1 to 1 (optional)
+  
+  @@index([questionnaireId])
+  @@index([nama])
+  @@index([nik])
+  @@index([provinsiKode])
+  @@index([kabupatenKode])
+  @@index([kecamatanKode])
+  @@index([desaKode])
+  @@map("anggota_keluarga")
+}
+
+// V. B. GANGGUAN KESEHATAN (per individu)
+model GangguanKesehatan {
+  id                String   @id @default(cuid())
+  anggotaKeluargaId String   @unique
+  
+  // Berlaku untuk semua umur
+  kartuJKN          String? // YA/TIDAK
+  merokok           String? // YA/TIDAK
+  
+  // Anggota ≥ 15 tahun
+  buangAirBesarJamban String? // YA/TIDAK
+  airBersih         String? // YA/TIDAK
+  diagnosisTB       String? // YA/TIDAK
+  obatTBC6Bulan     String? // YA/TIDAK
+  batukDarah2Minggu String? // YA/TIDAK
+  diagnosisHipertensi String? // YA/TIDAK
+  obatHipertensiTeratur String? // YA/TIDAK
+  pengukuranTekananDarah String? // YA/TIDAK
+  sistolik          Int?    // mmHg
+  diastolik         Int?    // mmHg
+  
+  // Wanita usia 10-54 tahun
+  kontrasepsiKB     String? // YA/TIDAK
+  
+  // Ibu yang memiliki AK < 12 bulan
+  melahirkanDiFaskes String? // YA/TIDAK
+  
+  // Bayi 0-6 bulan
+  asiEksklusif      String? // YA/TIDAK
+  
+  // Bayi 12-23 bulan
+  imunisasiLengkap  String? // YA/TIDAK
+  
+  // AK 2-59 bulan
+  pemantauanPertumbuhanBalita String? // YA/TIDAK
+  
+  // Catatan tambahan
+  catatan           String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  anggotaKeluarga   AnggotaKeluarga @relation(fields: [anggotaKeluargaId], references: [id], onDelete: Cascade)
+  
+  @@index([anggotaKeluargaId])
+  @@map("gangguan_kesehatan")
+}
+
+// Models tidak diperlukan - sudah dihapus:
+// - Respondent (tidak pakai dinas kesehatan lagi)
+// - QuestionnaireAnswer (data disimpan dalam JSON di questionnaire)
+// - QuestionTemplate (tidak pakai template)
+
+// Enums
+enum UserRole {
+  SUPERADMIN  // Jodyaryono - Full access
+  ADMIN       // Can manage PETUGAS
+  PETUGAS     // Regular staff
+  VIEWER      // Read-only
+  USER        // Default
+}
+
+enum QuestionnaireStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+// Enum AnswerType tidak diperlukan lagi
+
+// Tabel Wilayah Indonesia (Provinsi, Kabupaten/Kota, Kecamatan, Desa/Kelurahan)
+model Provinsi {
+  kode          String      @id // Kode provinsi 2 digit dari BPS (ex: 94)
+  nama          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  kabupaten     Kabupaten[]
+  
+  @@index([nama])
+  @@map("provinsi")
+}
+
+model Kabupaten {
+  kode          String      @id // Kode kabupaten 4 digit dari BPS (ex: 9471)
+  provinsiKode  String      // Foreign key ke kode provinsi (2 digit)
+  nama          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  provinsi      Provinsi    @relation(fields: [provinsiKode], references: [kode], onDelete: Cascade)
+  kecamatan     Kecamatan[]
+  
+  @@index([provinsiKode])
+  @@index([nama])
+  @@map("kabupaten")
+}
+
+model Kecamatan {
+  kode          String      @id // Kode kecamatan 7 digit dari BPS (ex: 9471010)
+  kabupatenKode String      // Foreign key ke kode kabupaten (4 digit)
+  nama          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  kabupaten     Kabupaten   @relation(fields: [kabupatenKode], references: [kode], onDelete: Cascade)
+  desa          Desa[]
+  
+  @@index([kabupatenKode])
+  @@index([nama])
+  @@map("kecamatan")
+}
+
+model Desa {
+  kode          String      @id // Kode desa 10 digit dari BPS (ex: 9471010001)
+  kecamatanKode String      // Foreign key ke kode kecamatan (7 digit)
+  nama          String
+  latitude      Float?      // Koordinat latitude
+  longitude     Float?      // Koordinat longitude
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  kecamatan     Kecamatan   @relation(fields: [kecamatanKode], references: [kode], onDelete: Cascade)
+  
+  @@index([kecamatanKode])
+  @@index([nama])
+  @@map("desa")
+}

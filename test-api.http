@@ -1,0 +1,46 @@
+# SiKesKoja API Testing
+
+## Server Health Check
+GET http://localhost:5000/health
+
+## Auth Health Check  
+GET http://localhost:5000/api/auth/health
+
+## Login with Admin User (from seed data)
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@sikeskoja.com",
+  "password": "password123"
+}
+
+## Login with Doctor User (from seed data)
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "doctor@sikeskoja.com", 
+  "password": "password123"
+}
+
+## Login with Nurse User (from seed data)
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nurse@sikeskoja.com",
+  "password": "password123"
+}
+
+## Register New User
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "newuser@test.com",
+  "username": "newuser", 
+  "password": "password123",
+  "fullName": "New User",
+  "phone": "+62812345678"
+}

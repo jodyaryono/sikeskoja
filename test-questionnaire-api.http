@@ -1,0 +1,119 @@
+# Test API Questionnaires & Respondents
+
+## Authentication
+POST http://localhost:5000/api/auth/otp/request
+Content-Type: application/json
+
+{
+  "phone": "081234567890"
+}
+
+###
+POST http://localhost:5000/api/auth/otp/verify
+Content-Type: application/json
+
+{
+  "phone": "081234567890",
+  "otpCode": "123456"
+}
+
+###
+@token = <paste_token_here>
+
+## Respondents API
+
+### Get All Respondents
+GET http://localhost:5000/api/respondents?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Get Respondent by ID
+GET http://localhost:5000/api/respondents/{{respondentId}}
+Authorization: Bearer {{token}}
+
+### Create Respondent
+POST http://localhost:5000/api/respondents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "namaDinasKesehatan": "Dinas Kesehatan Kota Jayapura",
+  "kodeDinasKesehatan": "DINKES-JPR-001",
+  "provinsi": "Papua",
+  "kabupatenKota": "Kota Jayapura",
+  "alamat": "Jl. Ahmad Yani No. 1, Jayapura",
+  "kodePos": "99111",
+  "noTelepon": "0967-533333",
+  "email": "dinkes@jayapurakota.go.id",
+  "website": "https://dinkes.jayapurakota.go.id",
+  "namaKepala": "Dr. John Doe, M.Kes",
+  "jabatanKepala": "Kepala Dinas Kesehatan"
+}
+
+### Update Respondent
+PUT http://localhost:5000/api/respondents/{{respondentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "noTelepon": "0967-533334",
+  "email": "info@jayapurakota.go.id"
+}
+
+### Delete Respondent
+DELETE http://localhost:5000/api/respondents/{{respondentId}}
+Authorization: Bearer {{token}}
+
+### Get Respondent Stats
+GET http://localhost:5000/api/respondents/stats
+Authorization: Bearer {{token}}
+
+## Questionnaires API
+
+### Get All Questionnaires
+GET http://localhost:5000/api/questionnaires?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Get Questionnaire by ID
+GET http://localhost:5000/api/questionnaires/{{questionnaireId}}
+Authorization: Bearer {{token}}
+
+### Create Questionnaire
+POST http://localhost:5000/api/questionnaires
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "respondentId": "{{respondentId}}",
+  "namaDinasKesehatan": "Dinas Kesehatan Kota Jayapura",
+  "alamatDinasKesehatan": "Jl. Ahmad Yani No. 1, Jayapura",
+  "provinsi": "Papua",
+  "kabupatenKota": "Kota Jayapura",
+  "noTelepon": "0967-533333",
+  "email": "dinkes@jayapurakota.go.id",
+  "namaPengisi": "Jane Smith",
+  "jabatanPengisi": "Kepala Bidang Data dan Informasi",
+  "questionnaireData": "{\"sectionA\": {\"question1\": \"answer1\"}}",
+  "status": "DRAFT"
+}
+
+### Update Questionnaire
+PUT http://localhost:5000/api/questionnaires/{{questionnaireId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "IN_PROGRESS",
+  "questionnaireData": "{\"sectionA\": {\"question1\": \"updated answer\"}}"
+}
+
+### Delete Questionnaire
+DELETE http://localhost:5000/api/questionnaires/{{questionnaireId}}
+Authorization: Bearer {{token}}
+
+### Get Questionnaire Stats
+GET http://localhost:5000/api/questionnaires/stats
+Authorization: Bearer {{token}}
+
+### Search and Filter
+GET http://localhost:5000/api/questionnaires?search=Jayapura&status=COMPLETED&provinsi=Papua
+Authorization: Bearer {{token}}
