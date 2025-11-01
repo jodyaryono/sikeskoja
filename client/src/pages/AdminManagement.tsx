@@ -39,14 +39,22 @@ const AdminManagement: React.FC = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_BASE_URL}/users?role=ADMIN`, {
+      const response = await axios.get(`${API_BASE_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setAdmins(response.data.users || []);
+      // Filter admins di frontend
+      const allUsers = response.data.users || [];
+      const adminUsers = allUsers.filter(
+        (user: Admin) => user.role === "ADMIN" || user.role === "SUPERADMIN"
+      );
+      setAdmins(adminUsers);
     } catch (err: any) {
-      setError("Gagal memuat data admin");
-      console.error(err);
+      setError(
+        err.response?.data?.message || "Gagal memuat data admin. Silakan refresh halaman."
+      );
+      console.error("Error fetching admins:", err);
     } finally {
       setLoading(false);
     }
