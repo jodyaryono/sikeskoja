@@ -4,6 +4,7 @@ import morgan from "morgan";
 import { config } from "./config";
 import authRouter from "./routes/authSimple";
 import otpAuthRouter from "./routes/otpAuth";
+import usersRouter from "./routes/users";
 // import questionnaireRouter from "./routes/questionnaires"; // OLD - disabled
 // import respondentRouter from "./routes/respondents"; // OLD - disabled
 import questionnaireKSRouter from "./routes/questionnaireKS";
@@ -31,6 +32,7 @@ app.get("/health", (req, res) => {
 // API Routes
 app.use("/api/auth", authRouter);
 app.use("/api/auth/otp", otpAuthRouter);
+app.use("/api/users", usersRouter);
 // app.use("/api/questionnaires", questionnaireRouter); // OLD - disabled
 // app.use("/api/respondents", respondentRouter); // OLD - disabled
 app.use("/api/questionnaires-ks", questionnaireKSRouter);
