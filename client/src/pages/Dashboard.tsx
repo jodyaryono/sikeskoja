@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
   FileText,
@@ -16,6 +17,7 @@ import { useAuthStore } from "../store/authStore";
 
 const Dashboard: React.FC = () => {
   const { user, token } = useAuthStore();
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const [isLoading, setIsLoading] = React.useState(true);
   const [stats, setStats] = React.useState([
@@ -348,14 +350,14 @@ const Dashboard: React.FC = () => {
             )}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {user?.role === "SUPERADMIN" && (
+            {(user?.role === "SUPERADMIN" || user?.role === "ADMIN") && (
               <>
                 <QuickActionButton
                   icon={Users}
                   title="Kelola Admin"
                   description="Tambah, edit, hapus admin sistem"
                   gradient="from-blue-500 to-blue-600"
-                  onClick={() => alert("Fitur kelola admin segera hadir!")}
+                  onClick={() => navigate("/admin")}
                 />
                 <QuickActionButton
                   icon={Settings}
