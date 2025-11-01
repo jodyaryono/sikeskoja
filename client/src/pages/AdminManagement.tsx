@@ -28,8 +28,11 @@ const AdminManagement: React.FC = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Use relative path in production, localhost in development
   const API_BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+    process.env.NODE_ENV === "production"
+      ? "/api"
+      : process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
   useEffect(() => {
     fetchAdmins();
