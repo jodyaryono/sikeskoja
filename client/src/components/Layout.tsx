@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Menu, X, FileText, Home, LogOut } from "lucide-react";
+import { Menu, X, FileText, Home, LogOut, Users } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -23,6 +23,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       name: "Laporan & Analisis",
       href: "/reports",
       icon: FileText,
+    },
+    {
+      name: "Kelola Admin",
+      href: "/admin",
+      icon: Users,
+      adminOnly: true,
     },
   ];
 
@@ -53,6 +59,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button
               className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
               onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+              title="Close sidebar"
             >
               <X className="h-6 w-6 text-white" />
             </button>
@@ -74,26 +82,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
             <nav className="mt-6 px-2 space-y-1">
-              {navigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className={`${
-                    isCurrentPath(item.href)
-                      ? "bg-primary-100 text-primary-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  } group flex items-center px-2 py-2 text-base font-medium rounded-md`}
-                >
-                  <item.icon
+              {navigation
+                .filter((item) => !item.adminOnly || user?.role === "ADMIN")
+                .map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
                     className={`${
                       isCurrentPath(item.href)
-                        ? "text-primary-500"
-                        : "text-gray-400 group-hover:text-gray-500"
-                    } mr-4 flex-shrink-0 h-6 w-6`}
-                  />
-                  {item.name}
-                </a>
-              ))}
+                        ? "bg-primary-100 text-primary-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    } group flex items-center px-2 py-2 text-base font-medium rounded-md`}
+                  >
+                    <item.icon
+                      className={`${
+                        isCurrentPath(item.href)
+                          ? "text-primary-500"
+                          : "text-gray-400 group-hover:text-gray-500"
+                      } mr-4 flex-shrink-0 h-6 w-6`}
+                    />
+                    {item.name}
+                  </a>
+                ))}
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
@@ -141,26 +151,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
               <nav className="mt-6 flex-1 px-2 bg-white space-y-1">
-                {navigation.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className={`${
-                      isCurrentPath(item.href)
-                        ? "bg-primary-100 text-primary-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
-                  >
-                    <item.icon
+                {navigation
+                  .filter((item) => !item.adminOnly || user?.role === "ADMIN")
+                  .map((item) => (
+                    <a
+                      key={item.name}
+                      href={item.href}
                       className={`${
                         isCurrentPath(item.href)
-                          ? "text-primary-500"
-                          : "text-gray-400 group-hover:text-gray-500"
-                      } mr-3 flex-shrink-0 h-6 w-6`}
-                    />
-                    {item.name}
-                  </a>
-                ))}
+                          ? "bg-primary-100 text-primary-900"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                    >
+                      <item.icon
+                        className={`${
+                          isCurrentPath(item.href)
+                            ? "text-primary-500"
+                            : "text-gray-400 group-hover:text-gray-500"
+                        } mr-3 flex-shrink-0 h-6 w-6`}
+                      />
+                      {item.name}
+                    </a>
+                  ))}
               </nav>
             </div>
             <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
@@ -185,6 +197,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <button
                   onClick={handleLogout}
                   className="ml-3 p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-md"
+                  aria-label="Logout"
+                  title="Logout"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>

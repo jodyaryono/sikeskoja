@@ -5,6 +5,7 @@ import {
   updateUser,
   deleteUser,
   getUserStatistics,
+  createAdmin,
 } from "../controllers/usersController";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { validateUserUpdate } from "../middleware/validation";
@@ -19,6 +20,9 @@ router.get("/", requireRole(["ADMIN"]), getUsers);
 
 // GET /api/users/statistics - Get user statistics (Admin only)
 router.get("/statistics", requireRole(["ADMIN"]), getUserStatistics);
+
+// POST /api/users/admin - Create new admin (Admin only)
+router.post("/admin", requireRole(["ADMIN"]), createAdmin);
 
 // GET /api/users/:id - Get specific user
 router.get("/:id", getUserById);

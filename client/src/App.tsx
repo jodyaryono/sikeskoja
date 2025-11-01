@@ -14,6 +14,7 @@ import EditQuestionnaire from "./pages/EditQuestionnaire";
 import ViewQuestionnaireKS from "./pages/ViewQuestionnaireKS";
 import PrintQuestionnaireKS from "./pages/PrintQuestionnaireKS";
 import ReportsPage from "./pages/ReportsPage";
+import AdminManagement from "./pages/AdminManagement";
 // import Respondents from "./pages/Respondents"; // REMOVED - table deleted
 import Login from "./pages/Login";
 import { useAuthStore } from "./store/authStore";
@@ -49,6 +50,7 @@ function App() {
                   {/* <Route path="/respondents" element={<Respondents />} /> */}
                   <Route path="/questionnaires" element={<Questionnaires />} />
                   <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/admin" element={<AdminManagement />} />
                   <Route
                     path="/questionnaires/add"
                     element={<AddQuestionnaireKS />}

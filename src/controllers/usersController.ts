@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import prisma from "../config/database";
 import { config } from "../config";
 
@@ -289,6 +290,103 @@ export const getUserStatistics = async (req: Request, res: Response) => {
     res.status(500).json({
       error: "Internal Server Error",
       message: "Failed to fetch user statistics",
+    });
+  }
+};
+
+// Create new admin - only accessible by existing admins
+export const createAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const { phone, email, username, password, fullName } = req.body;
+
+    // Validate required fields
+    if (!phone) {
+      return res.status(400).json({
+        error: "Phone required",
+        message: "Phone number is required",
+      });
+    }
+
+    if (!email || !username || !password || !fullName) {
+      return res.status(400).json({
+        error: "Missing fields",
+        message: "Email, username, password, and full name are required",
+      });
+    }
+
+    // Check if phone already exists
+    const phoneExists = await prisma.user.findUnique({
+      where: { phone },
+    });
+
+    if (phoneExists) {
+      return res.status(400).json({
+        error: "Phone already exists",
+        message: "A user with this phone number already exists",
+      });
+    }
+
+    // Check if email already exists
+    const emailExists = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (emailExists) {
+      return res.status(400).json({
+        error: "Email already exists",
+        message: "A user with this email already exists",
+      });
+    }
+
+    // Check if username already exists
+    const usernameExists = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (usernameExists) {
+      return res.status(400).json({
+        error: "Username already exists",
+        message: "A user with this username already exists",
+      });
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create admin user with profile
+    const newAdmin = await prisma.user.create({
+      data: {
+        email,
+        username,
+        phone,
+        password: hashedPassword,
+        role: "ADMIN",
+        isActive: true,
+        profile: {
+          create: {
+            fullName,
+            phone,
+          },
+        },
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    // Remove password from response
+    const { password: _, ...adminWithoutPassword } = newAdmin;
+
+    res.status(201).json({
+      message: "Admin created successfully",
+      admin: adminWithoutPassword,
+    });
+  } catch (error) {
+    console.error("Create admin error:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to create admin",
     });
   }
 };

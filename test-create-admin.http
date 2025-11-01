@@ -1,0 +1,50 @@
+### Create Admin - Test Endpoint
+### Admin dapat menambahkan admin lain dengan nomor HP
+
+### 1. Login sebagai admin dulu untuk dapat token
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@sikeskoja.com",
+  "password": "admin123"
+}
+
+### 2. Create new admin (ganti TOKEN dengan token dari login di atas)
+POST http://localhost:5000/api/users/admin
+Content-Type: application/json
+Authorization: Bearer YOUR_ADMIN_TOKEN_HERE
+
+{
+  "phone": "+6281234567890",
+  "email": "newadmin@sikeskoja.com",
+  "username": "newadmin",
+  "password": "Admin123!",
+  "fullName": "Admin Baru"
+}
+
+### Expected Response (201 Created):
+# {
+#   "message": "Admin created successfully",
+#   "admin": {
+#     "id": "...",
+#     "email": "newadmin@sikeskoja.com",
+#     "username": "newadmin",
+#     "phone": "+6281234567890",
+#     "role": "ADMIN",
+#     "isActive": true,
+#     "profile": {
+#       "fullName": "Admin Baru",
+#       "phone": "+6281234567890"
+#     }
+#   }
+# }
+
+### 3. Test login dengan admin baru
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "newadmin@sikeskoja.com",
+  "password": "Admin123!"
+}
