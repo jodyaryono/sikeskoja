@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import QuickActionButton from "../components/QuickActionButton";
 import { useAuthStore } from "../store/authStore";
+import API_BASE_URL from "../config/api";
 
 const Dashboard: React.FC = () => {
   const { user, token } = useAuthStore();
@@ -136,11 +137,11 @@ const Dashboard: React.FC = () => {
         console.log("👤 User:", user?.username);
         console.log(
           "📡 Fetching stats from:",
-          "http://localhost:5000/api/questionnaires-ks/stats"
+          `${API_BASE_URL}/questionnaires-ks/stats`
         );
 
         const response = await axios.get(
-          "http://localhost:5000/api/questionnaires-ks/stats",
+          `${API_BASE_URL}/questionnaires-ks/stats`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
