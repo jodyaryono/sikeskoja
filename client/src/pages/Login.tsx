@@ -131,12 +131,12 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background Decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-300 opacity-10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400 opacity-5 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300 opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-400 opacity-5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="max-w-md w-full space-y-8 relative z-10">
@@ -144,16 +144,16 @@ const Login: React.FC = () => {
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-2xl blur-lg opacity-75 animate-pulse"></div>
-              <div className="relative bg-white p-4 rounded-2xl shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-3xl blur-xl opacity-75 animate-pulse"></div>
+              <div className="relative bg-white p-6 rounded-3xl shadow-2xl">
                 <img
                   src="/images/logo-jayapura.png"
                   alt="Logo Kota Jayapura"
-                  className="h-16 w-16 object-contain"
+                  className="h-24 w-24 object-contain"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                     e.currentTarget.parentElement!.innerHTML =
-                      '<div class="h-16 w-16 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center"><svg class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>';
+                      '<div class="h-24 w-24 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl flex items-center justify-center"><svg class="h-16 w-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>';
                   }}
                 />
               </div>
@@ -162,10 +162,10 @@ const Login: React.FC = () => {
           <h2 className="text-4xl font-extrabold text-white drop-shadow-lg">
             SiKesKoja
           </h2>
-          <p className="mt-2 text-blue-100 text-sm font-medium">
+          <p className="mt-2 text-yellow-50 text-sm font-medium">
             Sistem Kesehatan Kota Jayapura
           </p>
-          <div className="mt-4 flex items-center justify-center space-x-4 text-xs text-blue-200">
+          <div className="mt-4 flex items-center justify-center space-x-4 text-xs text-yellow-100">
             <div className="flex items-center">
               <Shield className="h-4 w-4 mr-1" />
               <span>Aman & Terpercaya</span>
@@ -237,7 +237,7 @@ const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading || !phone}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {isLoading ? (
                     <div className="flex items-center">
@@ -304,7 +304,7 @@ const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading || otpCode.length !== 6}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {isLoading ? (
                     <div className="flex items-center">
@@ -320,7 +320,7 @@ const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                   >
                     Ganti Nomor
                   </button>
@@ -328,7 +328,7 @@ const Login: React.FC = () => {
                     type="button"
                     onClick={handleResendOTP}
                     disabled={isLoading || timeLeft > 0}
-                    className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Kirim Ulang
                   </button>
