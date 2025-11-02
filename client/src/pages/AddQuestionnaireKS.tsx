@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import API_BASE_URL from "../config/api";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import {
@@ -218,9 +219,7 @@ const AddQuestionnaireKS: React.FC = () => {
   useEffect(() => {
     const fetchProvinsi = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/wilayah/provinsi"
-        );
+        const response = await axios.get("${API_BASE_URL}/wilayah/provinsi");
         setProvinsiList(response.data);
       } catch (error) {
         console.error("Error fetching provinsi:", error);
@@ -236,7 +235,7 @@ const AddQuestionnaireKS: React.FC = () => {
       const fetchKabupaten = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:5000/api/wilayah/kabupaten/${selectedProvinsi}`
+            `${API_BASE_URL}/wilayah/kabupaten/${selectedProvinsi}`
           );
           setKabupatenList(response.data);
         } catch (error) {
@@ -257,7 +256,7 @@ const AddQuestionnaireKS: React.FC = () => {
       const fetchKecamatan = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:5000/api/wilayah/kecamatan/${selectedKabupaten}`
+            `${API_BASE_URL}/wilayah/kecamatan/${selectedKabupaten}`
           );
           setKecamatanList(response.data);
         } catch (error) {
@@ -278,7 +277,7 @@ const AddQuestionnaireKS: React.FC = () => {
       const fetchDesa = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:5000/api/wilayah/desa/${selectedKecamatan}`
+            `${API_BASE_URL}/wilayah/desa/${selectedKecamatan}`
           );
           setDesaList(response.data);
         } catch (error) {
@@ -298,7 +297,7 @@ const AddQuestionnaireKS: React.FC = () => {
     try {
       setFetchingData(true);
       const response = await axios.get(
-        `http://localhost:5000/api/questionnaires-ks/${id}`,
+        `${API_BASE_URL}/questionnaires-ks/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -353,7 +352,7 @@ const AddQuestionnaireKS: React.FC = () => {
           if (data.kabupatenKode) {
             try {
               const kabResponse = await axios.get(
-                `http://localhost:5000/api/wilayah/kabupaten/${data.provinsiKode}`
+                `${API_BASE_URL}/wilayah/kabupaten/${data.provinsiKode}`
               );
               console.log(
                 "✅ Loaded kabupaten:",
@@ -372,7 +371,7 @@ const AddQuestionnaireKS: React.FC = () => {
           if (data.kecamatanKode) {
             try {
               const kecResponse = await axios.get(
-                `http://localhost:5000/api/wilayah/kecamatan/${data.kabupatenKode}`
+                `${API_BASE_URL}/wilayah/kecamatan/${data.kabupatenKode}`
               );
               console.log(
                 "✅ Loaded kecamatan:",
@@ -391,7 +390,7 @@ const AddQuestionnaireKS: React.FC = () => {
           if (data.desaKode) {
             try {
               const desaResponse = await axios.get(
-                `http://localhost:5000/api/wilayah/desa/${data.kecamatanKode}`
+                `${API_BASE_URL}/wilayah/desa/${data.kecamatanKode}`
               );
               console.log("✅ Loaded desa:", desaResponse.data.length, "items");
               setDesaList(desaResponse.data);
@@ -404,9 +403,12 @@ const AddQuestionnaireKS: React.FC = () => {
         }
 
         // Set anggota keluarga with health data
-        console.log("📋 Data anggota keluarga dari API:", data.anggotaKeluarga);
-        if (data.anggotaKeluarga && data.anggotaKeluarga.length > 0) {
-          const mappedAnggota = data.anggotaKeluarga.map((a: any) => ({
+        const anggotaArray = Array.isArray(data.anggotaKeluarga)
+          ? data.anggotaKeluarga
+          : [];
+
+        if (anggotaArray.length > 0) {
+          const mappedAnggota = anggotaArray.map((a: any) => ({
             id: a.id,
             nama: a.nama,
             nik: a.nik || "",
@@ -455,6 +457,9 @@ const AddQuestionnaireKS: React.FC = () => {
               a.gangguanKesehatan?.pemantauanPertumbuhanBalita || "TIDAK",
           }));
           setAnggotaKeluarga(mappedAnggota);
+        } else {
+          // Set empty array if no anggota keluarga
+          setAnggotaKeluarga([]);
         }
       }
     } catch (error) {
@@ -762,7 +767,7 @@ const AddQuestionnaireKS: React.FC = () => {
         jumlahAnggotaUsia0_11,
         // Filter out file-related fields (ktpFile, kkFile, ktpPreview, kkPreview)
         // These cannot be serialized to JSON and would cause 500 error
-        anggotaKeluarga: anggotaKeluarga.map(
+        anggotaKeluarga: (anggotaKeluarga || []).map(
           ({ id, ktpFile, kkFile, ktpPreview, kkPreview, ...rest }) => rest
         ),
         status: "DRAFT",
@@ -772,7 +777,7 @@ const AddQuestionnaireKS: React.FC = () => {
       if (isEditMode) {
         // Update existing questionnaire
         response = await axios.put(
-          `http://localhost:5000/api/questionnaires-ks/${id}`,
+          `${API_BASE_URL}/questionnaires-ks/${id}`,
           payload,
           {
             headers: {
@@ -784,7 +789,7 @@ const AddQuestionnaireKS: React.FC = () => {
       } else {
         // Create new questionnaire
         response = await axios.post(
-          "http://localhost:5000/api/questionnaires-ks",
+          `${API_BASE_URL}/questionnaires-ks`,
           payload,
           {
             headers: {
@@ -1302,7 +1307,7 @@ const AddQuestionnaireKS: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {anggotaKeluarga.map((anggota, index) => (
+          {(anggotaKeluarga || []).map((anggota, index) => (
             <div
               key={anggota.id}
               className={`p-4 border rounded-lg cursor-pointer transition-all ${
