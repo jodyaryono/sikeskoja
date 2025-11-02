@@ -733,7 +733,7 @@ const AddQuestionnaireKS: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (anggotaKeluarga.length === 0) {
+    if (!anggotaKeluarga || anggotaKeluarga.length === 0) {
       alert("Minimal harus ada 1 anggota keluarga!");
       return;
     }
@@ -1226,7 +1226,7 @@ const AddQuestionnaireKS: React.FC = () => {
       {/* List Anggota */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          📋 Daftar Anggota Keluarga ({anggotaKeluarga.length})
+          📋 Daftar Anggota Keluarga ({anggotaKeluarga?.length || 0})
         </h3>
         <button
           type="button"
@@ -1281,7 +1281,7 @@ const AddQuestionnaireKS: React.FC = () => {
         </div>
       )}
 
-      {anggotaKeluarga.length === 0 ? (
+      {(!anggotaKeluarga || anggotaKeluarga.length === 0) ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed">
           <p className="text-gray-600 mb-4">Belum ada anggota keluarga</p>
           <button
