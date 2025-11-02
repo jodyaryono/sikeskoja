@@ -480,7 +480,7 @@ const AddQuestionnaireKS: React.FC = () => {
 
   // Auto-navigate to Tab II (Anggota Keluarga) when coming from reports page
   useEffect(() => {
-    if (isEditMode && !fetchingData && anggotaKeluarga.length > 0) {
+    if (isEditMode && !fetchingData && anggotaKeluarga && anggotaKeluarga.length > 0) {
       // Navigate to Tab II for easy access to anggota keluarga list
       setMainTab(2);
 
@@ -494,7 +494,7 @@ const AddQuestionnaireKS: React.FC = () => {
         }
       }, 500);
     }
-  }, [isEditMode, fetchingData, anggotaKeluarga.length]);
+  }, [isEditMode, fetchingData, anggotaKeluarga]);
 
   const handleChange = (
     e: React.ChangeEvent<
