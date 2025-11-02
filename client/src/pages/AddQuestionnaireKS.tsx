@@ -416,63 +416,95 @@ const AddQuestionnaireKS: React.FC = () => {
         }
 
         // Set anggota keluarga with health data
+        console.log("🔍 DEBUG: About to process anggotaKeluarga");
+        console.log(
+          "🔍 data.anggotaKeluarga type:",
+          typeof data.anggotaKeluarga
+        );
+        console.log(
+          "🔍 data.anggotaKeluarga isArray:",
+          Array.isArray(data.anggotaKeluarga)
+        );
+        console.log("🔍 data.anggotaKeluarga value:", data.anggotaKeluarga);
+
+        // CRITICAL FIX: Convert Prisma Proxy to plain array
+        // Spread operator creates REAL JavaScript array from Proxy
         const anggotaArray = Array.isArray(data.anggotaKeluarga)
-          ? data.anggotaKeluarga
+          ? [...data.anggotaKeluarga]
           : [];
 
+        console.log("🔍 anggotaArray after spread:", anggotaArray);
+        console.log("🔍 anggotaArray length:", anggotaArray.length);
+
         if (anggotaArray.length > 0) {
-          const mappedAnggota = anggotaArray.map((a: any) => ({
-            id: a.id,
-            nama: a.nama,
-            nik: a.nik || "",
-            hubunganKeluarga: a.hubunganKeluarga,
-            tanggalLahir: a.tanggalLahir
-              ? new Date(a.tanggalLahir).toISOString().split("T")[0]
-              : "",
-            umur: a.umur,
-            jenisKelamin: a.jenisKelamin,
-            statusPerkawinan: a.statusPerkawinan,
-            sedangHamil: a.sedangHamil,
-            agama: a.agama,
-            pendidikan: a.pendidikan,
-            pekerjaan: a.pekerjaan,
-            // Alamat wilayah data
-            ikutiKepalaKeluarga: a.ikutiKepalaKeluarga !== false,
-            alamatRumah: a.alamatRumah,
-            provinsiKode: a.provinsiKode,
-            kabupatenKode: a.kabupatenKode,
-            kecamatanKode: a.kecamatanKode,
-            desaKode: a.desaKode,
-            // Health data
-            kartuJKN: a.gangguanKesehatan?.kartuJKN || "TIDAK",
-            merokok: a.gangguanKesehatan?.merokok || "TIDAK",
-            buangAirBesarJamban:
-              a.gangguanKesehatan?.buangAirBesarJamban || "TIDAK",
-            airBersih: a.gangguanKesehatan?.airBersih || "TIDAK",
-            diagnosisTB: a.gangguanKesehatan?.diagnosisTB || "TIDAK",
-            obatTBC6Bulan: a.gangguanKesehatan?.obatTBC6Bulan || "TIDAK",
-            batukDarah2Minggu:
-              a.gangguanKesehatan?.batukDarah2Minggu || "TIDAK",
-            diagnosisHipertensi:
-              a.gangguanKesehatan?.diagnosisHipertensi || "TIDAK",
-            obatHipertensiTeratur:
-              a.gangguanKesehatan?.obatHipertensiTeratur || "TIDAK",
-            pengukuranTekananDarah:
-              a.gangguanKesehatan?.pengukuranTekananDarah || "TIDAK",
-            sistolik: a.gangguanKesehatan?.sistolik || undefined,
-            diastolik: a.gangguanKesehatan?.diastolik || undefined,
-            kontrasepsiKB: a.gangguanKesehatan?.kontrasepsiKB || "TIDAK",
-            melahirkanDiFaskes:
-              a.gangguanKesehatan?.melahirkanDiFaskes || "TIDAK",
-            asiEksklusif: a.gangguanKesehatan?.asiEksklusif || "TIDAK",
-            imunisasiLengkap: a.gangguanKesehatan?.imunisasiLengkap || "TIDAK",
-            pemantauanPertumbuhanBalita:
-              a.gangguanKesehatan?.pemantauanPertumbuhanBalita || "TIDAK",
-          }));
-          setAnggotaKeluarga(mappedAnggota);
+          console.log("🔍 About to map anggotaArray...");
+          try {
+            const mappedAnggota = anggotaArray.map((a: any) => ({
+              id: a.id,
+              nama: a.nama,
+              nik: a.nik || "",
+              hubunganKeluarga: a.hubunganKeluarga,
+              tanggalLahir: a.tanggalLahir
+                ? new Date(a.tanggalLahir).toISOString().split("T")[0]
+                : "",
+              umur: a.umur,
+              jenisKelamin: a.jenisKelamin,
+              statusPerkawinan: a.statusPerkawinan,
+              sedangHamil: a.sedangHamil,
+              agama: a.agama,
+              pendidikan: a.pendidikan,
+              pekerjaan: a.pekerjaan,
+              // Alamat wilayah data
+              ikutiKepalaKeluarga: a.ikutiKepalaKeluarga !== false,
+              alamatRumah: a.alamatRumah,
+              provinsiKode: a.provinsiKode,
+              kabupatenKode: a.kabupatenKode,
+              kecamatanKode: a.kecamatanKode,
+              desaKode: a.desaKode,
+              // Health data
+              kartuJKN: a.gangguanKesehatan?.kartuJKN || "TIDAK",
+              merokok: a.gangguanKesehatan?.merokok || "TIDAK",
+              buangAirBesarJamban:
+                a.gangguanKesehatan?.buangAirBesarJamban || "TIDAK",
+              airBersih: a.gangguanKesehatan?.airBersih || "TIDAK",
+              diagnosisTB: a.gangguanKesehatan?.diagnosisTB || "TIDAK",
+              obatTBC6Bulan: a.gangguanKesehatan?.obatTBC6Bulan || "TIDAK",
+              batukDarah2Minggu:
+                a.gangguanKesehatan?.batukDarah2Minggu || "TIDAK",
+              diagnosisHipertensi:
+                a.gangguanKesehatan?.diagnosisHipertensi || "TIDAK",
+              obatHipertensiTeratur:
+                a.gangguanKesehatan?.obatHipertensiTeratur || "TIDAK",
+              pengukuranTekananDarah:
+                a.gangguanKesehatan?.pengukuranTekananDarah || "TIDAK",
+              sistolik: a.gangguanKesehatan?.sistolik || undefined,
+              diastolik: a.gangguanKesehatan?.diastolik || undefined,
+              kontrasepsiKB: a.gangguanKesehatan?.kontrasepsiKB || "TIDAK",
+              melahirkanDiFaskes:
+                a.gangguanKesehatan?.melahirkanDiFaskes || "TIDAK",
+              asiEksklusif: a.gangguanKesehatan?.asiEksklusif || "TIDAK",
+              imunisasiLengkap:
+                a.gangguanKesehatan?.imunisasiLengkap || "TIDAK",
+              pemantauanPertumbuhanBalita:
+                a.gangguanKesehatan?.pemantauanPertumbuhanBalita || "TIDAK",
+            }));
+            console.log(
+              "🔍 Map successful! Setting state with",
+              mappedAnggota.length,
+              "items"
+            );
+            setAnggotaKeluarga(mappedAnggota);
+            console.log("🔍 State set successfully!");
+          } catch (mapError) {
+            console.error("❌ ERROR in anggotaArray.map():", mapError);
+            console.error("❌ anggotaArray:", anggotaArray);
+            setAnggotaKeluarga([]);
+          }
         } else {
           // Set empty array if no anggota keluarga
+          console.log("🔍 No anggota, setting empty array");
           setAnggotaKeluarga([]);
+          console.log("🔍 Empty array set!");
         }
       }
     } catch (error) {
