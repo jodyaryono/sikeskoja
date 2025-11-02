@@ -172,7 +172,20 @@ const AddQuestionnaireKS: React.FC = () => {
     tanggalPengumpulan: new Date().toISOString().split("T")[0],
   });
 
-  const [anggotaKeluarga, setAnggotaKeluarga] = useState<AnggotaKeluarga[]>([]);
+  const [anggotaKeluarga, setAnggotaKeluargaRaw] = useState<AnggotaKeluarga[]>([]);
+  
+  // Safe setter that ALWAYS ensures array
+  const setAnggotaKeluarga = (value: AnggotaKeluarga[] | ((prev: AnggotaKeluarga[]) => AnggotaKeluarga[])) => {
+    if (typeof value === 'function') {
+      setAnggotaKeluargaRaw(prev => {
+        const result = value(prev || []);
+        return Array.isArray(result) ? result : [];
+      });
+    } else {
+      setAnggotaKeluargaRaw(Array.isArray(value) ? value : []);
+    }
+  };
+  
   const [selectedAnggotaIndex, setSelectedAnggotaIndex] = useState<
     number | null
   >(null);
