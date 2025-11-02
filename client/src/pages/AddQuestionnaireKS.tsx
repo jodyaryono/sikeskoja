@@ -233,7 +233,7 @@ const AddQuestionnaireKS: React.FC = () => {
     const fetchProvinsi = async () => {
       try {
         const response = await axios.get("${API_BASE_URL}/wilayah/provinsi");
-        setProvinsiList(response.data);
+        setProvinsiList([...response.data]); // Convert Prisma Proxy to array
       } catch (error) {
         console.error("Error fetching provinsi:", error);
         showToast("Gagal memuat data provinsi", "error");
@@ -250,7 +250,7 @@ const AddQuestionnaireKS: React.FC = () => {
           const response = await axios.get(
             `${API_BASE_URL}/wilayah/kabupaten/${selectedProvinsi}`
           );
-          setKabupatenList(response.data);
+          setKabupatenList([...response.data]); // Convert Prisma Proxy to array
         } catch (error) {
           console.error("Error fetching kabupaten:", error);
           showToast("Gagal memuat data kabupaten/kota", "error");
@@ -271,7 +271,7 @@ const AddQuestionnaireKS: React.FC = () => {
           const response = await axios.get(
             `${API_BASE_URL}/wilayah/kecamatan/${selectedKabupaten}`
           );
-          setKecamatanList(response.data);
+          setKecamatanList([...response.data]); // Convert Prisma Proxy to array
         } catch (error) {
           console.error("Error fetching kecamatan:", error);
           showToast("Gagal memuat data kecamatan", "error");
@@ -292,7 +292,7 @@ const AddQuestionnaireKS: React.FC = () => {
           const response = await axios.get(
             `${API_BASE_URL}/wilayah/desa/${selectedKecamatan}`
           );
-          setDesaList(response.data);
+          setDesaList([...response.data]); // Convert Prisma Proxy to array
         } catch (error) {
           console.error("Error fetching desa:", error);
           showToast("Gagal memuat data desa/kelurahan", "error");
@@ -372,7 +372,7 @@ const AddQuestionnaireKS: React.FC = () => {
                 kabResponse.data.length,
                 "items"
               );
-              setKabupatenList(kabResponse.data);
+              setKabupatenList([...kabResponse.data]); // Convert Prisma Proxy to array
               setSelectedKabupaten(data.kabupatenKode);
               console.log("✅ Set kabupaten:", data.kabupatenKode);
             } catch (error) {
@@ -391,7 +391,7 @@ const AddQuestionnaireKS: React.FC = () => {
                 kecResponse.data.length,
                 "items"
               );
-              setKecamatanList(kecResponse.data);
+              setKecamatanList([...kecResponse.data]); // Convert Prisma Proxy to array
               setSelectedKecamatan(data.kecamatanKode);
               console.log("✅ Set kecamatan:", data.kecamatanKode);
             } catch (error) {
@@ -406,7 +406,7 @@ const AddQuestionnaireKS: React.FC = () => {
                 `${API_BASE_URL}/wilayah/desa/${data.kecamatanKode}`
               );
               console.log("✅ Loaded desa:", desaResponse.data.length, "items");
-              setDesaList(desaResponse.data);
+              setDesaList([...desaResponse.data]); // Convert Prisma Proxy to array
               setSelectedDesa(data.desaKode);
               console.log("✅ Set desa:", data.desaKode);
             } catch (error) {
