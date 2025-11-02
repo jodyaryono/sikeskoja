@@ -741,25 +741,28 @@ const AddQuestionnaireKS: React.FC = () => {
     try {
       setLoading(true);
 
-      const jumlahAnggotaDewasa = anggotaKeluarga.filter(
+      // Safety check: ensure anggotaKeluarga is always an array
+      const safeAnggotaKeluarga = anggotaKeluarga || [];
+
+      const jumlahAnggotaDewasa = safeAnggotaKeluarga.filter(
         (a) => a.umur >= 15
       ).length;
-      const jumlahAnggotaUsia0_15 = anggotaKeluarga.filter(
+      const jumlahAnggotaUsia0_15 = safeAnggotaKeluarga.filter(
         (a) => a.umur <= 15
       ).length;
-      const jumlahAnggotaUsia12_59 = anggotaKeluarga.filter(
+      const jumlahAnggotaUsia12_59 = safeAnggotaKeluarga.filter(
         (a) => a.umur >= 12 && a.umur <= 59
       ).length;
-      const jumlahAnggotaUsia10_54 = anggotaKeluarga.filter(
+      const jumlahAnggotaUsia10_54 = safeAnggotaKeluarga.filter(
         (a) => a.umur >= 10 && a.umur <= 54
       ).length;
-      const jumlahAnggotaUsia0_11 = anggotaKeluarga.filter(
+      const jumlahAnggotaUsia0_11 = safeAnggotaKeluarga.filter(
         (a) => a.umur <= 11
       ).length;
 
       const payload = {
         ...formData,
-        jumlahAnggotaKeluarga: anggotaKeluarga.length,
+        jumlahAnggotaKeluarga: safeAnggotaKeluarga.length,
         jumlahAnggotaDewasa,
         jumlahAnggotaUsia0_15,
         jumlahAnggotaUsia12_59,
