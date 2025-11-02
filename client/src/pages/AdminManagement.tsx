@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useAuthStore } from "../store/authStore";
 
 interface Admin {
   id: string;
@@ -15,6 +16,7 @@ interface Admin {
 }
 
 const AdminManagement: React.FC = () => {
+  const { token } = useAuthStore();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -43,10 +45,22 @@ const AdminManagement: React.FC = () => {
     try {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
+
+      console.log("🔑 Token from store:", token);
+      console.log("🔑 Token length:", token?.length);
+
+      if (!token || token.length < 20) {
+        setError("Token tidak valid. Silakan logout dan login ulang.");
+        console.error("❌ Invalid token:", { token, length: token?.length });
+        return;
+      }
+
       const response = await axios.get(`${API_BASE_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.log("✅ API Response:", response.data);
+
       // Filter admins di frontend
       const allUsers = response.data.users || [];
       const adminUsers = allUsers.filter(
@@ -54,9 +68,14 @@ const AdminManagement: React.FC = () => {
       );
       setAdmins(adminUsers);
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Gagal memuat data admin. Silakan refresh halaman."
-      );
+      if (err.response?.status === 403 || err.response?.status === 401) {
+        setError("Sesi login tidak valid. Silakan logout dan login ulang.");
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Gagal memuat data admin. Silakan refresh halaman."
+        );
+      }
       console.error("Error fetching admins:", err);
     } finally {
       setLoading(false);
@@ -68,9 +87,13 @@ const AdminManagement: React.FC = () => {
     setError("");
     setSuccess("");
 
+    if (!token) {
+      setError("Token tidak ditemukan. Silakan login ulang.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
       await axios.post(`${API_BASE_URL}/users/admin`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });

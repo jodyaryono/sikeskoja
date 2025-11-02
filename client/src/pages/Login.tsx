@@ -85,7 +85,10 @@ const Login: React.FC = () => {
 
       if (response.data.success) {
         const { token, user } = response.data.data;
+        console.log("🔑 Login success, token length:", token?.length);
+        console.log("👤 User:", user);
         login(user, token);
+        console.log("✅ Login function called");
       } else {
         setError(response.data.message);
       }
